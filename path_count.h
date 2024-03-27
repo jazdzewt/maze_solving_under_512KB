@@ -1,0 +1,1 @@
+int path_count (char **array, int x);

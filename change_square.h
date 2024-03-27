@@ -1,0 +1,1 @@
+int change_square (char ***array, int lenght);
