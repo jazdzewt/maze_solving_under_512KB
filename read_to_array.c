@@ -1,26 +1,69 @@
 #include <stdlib.h>
 #include <stdio.h> 
 
+#include "zalewanie.h"
+#include "bfsv2.h"
+
+#define MAX_MODULE_SIZE 70 
+
 void read_to_array (FILE* file, int height, int width ){
 
-    rewind(file);
+    FILE* tmp_file = fopen("tmp_map.txt", "w");
 
-    int line_to_end = 3;
-    int line_to_start = line_to_end - 3;  
+    int module_number = 1; 
 
-    char** array = malloc(3 * sizeof(char*));
+    rewind(file); 
 
-    for (int i = 0; i < 3; i++){
+    char** array = malloc(MAX_MODULE_SIZE * sizeof(char*));
+
+    for (int i = 0; i < MAX_MODULE_SIZE; i++){
         array[i] = malloc(width * sizeof(char));
     }
 
-    for (int i = 0; i< line_to_end; i++){
-        for (int j = 0; j< width + 1; j++){
+    for (int i = 0; i< MAX_MODULE_SIZE; i++){
+        for (int j = 0; j< width  + 1; j++){
             array[i][j] = (char) fgetc(file); 
         }
     }
 
-    for (int j = 0; j < 3; j++){
+    //
+    while(zalewanie(&array, MAX_MODULE_SIZE, width));
+
+    //printowanie mapy 
+    for (int j = 0; j < MAX_MODULE_SIZE; j++){
+        for(int h = 0; h < width; h++){
+            printf(" [%c] ", array[j][h]);
+        }
+        printf("\n");
+    }
+
+    bfsv2(&array, MAX_MODULE_SIZE, width, tmp_file, module_number);
+
+    //szukanie konca 
+    /*
+    int kx = 0; 
+    int ky = 0; 
+
+    for (int i = 0; i< 50; i++){
+        for (int j = 0; j< width + 1; j++){
+             if (array[i][j] == 'K'){
+                kx = j; 
+                ky = i; 
+             }
+        }
+    }
+
+    printf("kx: %d ky: %d\n", kx, ky);
+ 
+
+    //bfs jesli koniec 
+    if (kx != 0 && ky != 0){
+
+    }
+    */
+
+    //printowanie mapy 
+    for (int j = 0; j < MAX_MODULE_SIZE; j++){
         for(int h = 0; h < width; h++){
             printf(" [%c] ", array[j][h]);
         }
@@ -29,7 +72,7 @@ void read_to_array (FILE* file, int height, int width ){
 
     //
 
-    for (int i = 0; i < 3; i++){
+    for (int i = 0; i < MAX_MODULE_SIZE; i++){
         free(array[i]);
     }
 
