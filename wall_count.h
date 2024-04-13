@@ -1,1 +1,0 @@
-int wall_count (char **array, int x);
