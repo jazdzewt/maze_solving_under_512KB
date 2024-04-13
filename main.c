@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "read_to_array.h"
+//#include "bfs.h"
 
 #define MAX_SIZE 1024
 
@@ -39,33 +40,36 @@ int main (int argc, char *argv[]){
 
     width = (width - height)/height; 
 
+
     /*if (mkdir("tmp", 0777) == -1) {
         printf("Could not create a directory!\n");
         return 1; 
     }*/
 
-    FILE* tmp_file = fopen("tmp_map.txt", "w");
+    //FILE* tmp_file = fopen("tmp_map.txt", "w");
 
     rewind(file);
-
+    /*
     ch = fgetc(file); 
     while (ch != EOF) 
     { 
         fputc(ch, tmp_file); 
         ch = fgetc(file); 
     }
-    
-    fclose(file);
+    */
+    //fclose(file);
 
     //printf("%d - wysokosc, %d - szerokosc \n ", height, width);
 
-    read_to_array(tmp_file, height, width);
+    read_to_array(file, height, width);
 
-    fclose(tmp_file);
+    //fclose(tmp_file);
 
     //remove("tmp_map.txt");
 
     //rmdir("tmp");
+
+    fclose(file);
 
     return 0; 
 }
