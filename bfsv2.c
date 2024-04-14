@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define QUEUE_MAX_SIZE 50
+#define QUEUE_MAX_SIZE 100
 
 typedef struct node {
     int x; 
@@ -32,11 +32,8 @@ struct node* next_node (int y, int x, struct node* ptr){
     }
 
     next_node->y = y;
-    printf("next_node_y - %d\n", next_node->y);
     next_node->x = x;
-    printf("next_node_x - %d\n", next_node->x);
     next_node->previous = ptr;
-    printf("next_node_ptr - %p\n", next_node->previous);
     return next_node;
 }
 
@@ -79,7 +76,6 @@ struct node* dequeue_ptr(struct node* (*queue_2)){
     int i = 1; 
     while (queue_2[i] != NULL && i < QUEUE_MAX_SIZE - 1){
         queue_2[i-1] = queue_2[i];
-        printf("queue_2[i] - %p\n", queue_2[i]);
         i++;
     }
     return ptr; 
@@ -113,6 +109,47 @@ void check_surroundings_2(char **maze, int y, int x, struct node* ptr, int (*que
         next_ptr = next_node(y-1, x, ptr);
         enqueue(queue, queue_2, y-1, x, next_ptr);
     }
+}
+
+void clear_queue (int (*queue)[2], struct node* (*queue_2)){
+
+    struct node* ptr;
+    struct node* tmp_ptr; 
+
+    for(int i = 0; i<QUEUE_MAX_SIZE; i++){
+ 
+        queue[i][0] = 0; 
+        queue[i][1] = 0;
+
+        if(queue_2[i] != NULL){
+            ptr = queue_2[i]; 
+            while(ptr->previous == NULL){
+                tmp_ptr = ptr->previous; 
+                free(ptr);
+                ptr = tmp_ptr;
+            }
+        }
+        queue_2[i] = NULL;
+    }
+}
+
+int exit_count (char **maze, int y, int x){
+    int i = 0;  
+
+    if(maze[y-1][x] == 'Z'){
+        i ++;
+    }
+    if(maze[y+1][x] == 'Z'){
+        i ++;
+    }
+    if(maze[y][x-1] == 'Z'){
+        i ++;
+    }
+    if(maze[y][x+1] == 'Z'){
+        i ++;
+    }
+
+    return i; 
 }
 
 void bfsv2(char ***maze, int height, int width, FILE* file, int module_num) { 
@@ -151,18 +188,14 @@ void bfsv2(char ***maze, int height, int width, FILE* file, int module_num) {
         }
     } 
 
-    printf("px, py - %d, %d\n", px, py);
-    printf("kx, ky - %d, %d\n", kx, ky);
-    printf("width - %d\n", width);
-
     struct node* struct_ptr;
 
-    int i, j, x, y;
-    int h =0;
-    int module_it = 0;
+    int i, j, x, y = 0;
+    int h = 0;
+    int path_step = 0; 
+    
 
-    printf("bleble\n");
-
+    //bfs dla modułu z p i k 
     if(px != -1 && kx != -1){
     
         struct_ptr = new_node(ky, kx - 1); 
@@ -178,13 +211,9 @@ void bfsv2(char ***maze, int height, int width, FILE* file, int module_num) {
                 }
             }
 
-            printf("px, py - %d, %d\n", px, py);
             i = dequeue_a(queue);
-            printf("dequeued i - %d\n", i);
             j = dequeue_b(queue);
-            printf("dequeued j - %d\n", j);
             struct_ptr = dequeue_ptr(queue_2);
-            printf("dequeued pointer - %p\n", struct_ptr); 
             check_surroundings_2(*maze, i, j, struct_ptr, queue, queue_2);        
         }
 
@@ -197,91 +226,97 @@ void bfsv2(char ***maze, int height, int width, FILE* file, int module_num) {
 
             struct_ptr = struct_ptr->previous;
         } 
+    //bfs dla modułu z p
     }else if(px != -1 && kx == -1){
 
-        printf("tutej\n");
-        //int module_it = 0; 
+        for(int g = 1; g < width-1; g++){ 
 
-        for(int g = 1; g < width-1; g++){
-            printf("po g \n");
-            if((*maze)[height-1][g] == ' '){
+            if((*maze)[height][g] == 'Z' && (*maze)[height-1][g] == ' '){
                 
-                module_it++; 
-
                 (*maze)[height-1][g] = 'O';
 
                 struct_ptr = new_node(height-1, g);
-                printf("enqueued\n");
 
                 enqueue(queue, queue_2, height-1, g, struct_ptr);
-
-                while(h == 0/*i != py && j != (px + 1)*/){
+                
+                while(h == 0){
 
                     if (j == px + 1){
                         if(i == py){
                             h = 1; 
                             break; 
                         }
+                    }    
+
+                    if(queue[0][0] == 0 && queue[0][1] == 0){
+                        if(exit_count((*maze), i, j) != 0){
+                            h = 1; 
+                            break;
+                        }
                     }
 
-                    printf("px, py - %d, %d\n", px, py);
-                    i = dequeue_a(queue);
-                    printf("dequeued i - %d\n", i);
-                    j = dequeue_b(queue);
-                    printf("dequeued j - %d\n", j);
-                    struct_ptr = dequeue_ptr(queue_2);
-                    printf("dequeued pointer - %p\n", struct_ptr); 
-                    check_surroundings_2((*maze), i, j, struct_ptr, queue, queue_2);        
+                    i = dequeue_a(queue);                    
+                    j = dequeue_b(queue);                    
+                    struct_ptr = dequeue_ptr(queue_2);                    
+                    check_surroundings_2((*maze), i, j, struct_ptr, queue, queue_2);
                 }
-
-                //int x, y;
+                
+                printf("i, j - %d, %d", i, j);
+                
                 //wypisywanie do pliku 
-                fprintf(file, "#%d,%d#%d\n",module_num, module_it, x);
+                fprintf(file, "#%d#%d,%d\n",module_num, height, g);
 
+                path_step = 0; 
                 while (struct_ptr->previous != NULL){
                     y = struct_ptr->y; 
                     x = struct_ptr->x;
                     fprintf(file, "%d,%d\n", y, x);
-
+                    path_step++;
                     struct_ptr = struct_ptr->previous;
                 }
+
+                //wypisywanie dlugosci sciezki dla modulu
+                fprintf(file, "L%d\n", path_step);
+
                 //czyszczenie mapy 
                 for (int i = 0; i < height; i++){
                     for (int j = 0; j < width; j++){
-                        if (*maze[i][j] == 'O'){
-                            *maze[i][j] == ' '; 
+                        if ((*maze)[i][j] == 'O'){
+                            (*maze)[i][j] = ' '; 
                         }
                     }
                 }
+
+                //czyszczenie pamieci i zerowanie zmiennych
+                clear_queue(queue, queue_2);
+                
+                h = 0;
+                i = -1; 
+                j = -1; 
             }
         }
+    //bfs dla modułu z k 
     }else if(kx != -1 && px == -1){
-
-        //int module_it = 0; 
 
         for(int g = 0; g<width-1; g++){
             if(*maze[0][g] == ' '){
-
-                module_it++; 
 
                 struct_ptr = new_node(ky, kx);
 
                 enqueue(queue, queue_2, height-1, g, struct_ptr);
 
-                while(i != 0/*i != py && j != (px + 1)*/){
+                while(i != 0){
 
-                    printf("px, py - %d, %d\n", px, py);
+                    path_step++; 
+
                     i = dequeue_a(queue);
-                    printf("dequeued i - %d\n", i);
                     j = dequeue_b(queue);
-                    printf("dequeued j - %d\n", j);
                     struct_ptr = dequeue_ptr(queue_2);
-                    printf("dequeued pointer - %p\n", struct_ptr); 
                     check_surroundings_2(*maze, i, j, struct_ptr, queue, queue_2);        
                 }
                 //int x, y;
 
-                fprintf(file, "#%d,%d#%d\n",module_num, module_it, x);
+                fprintf(file, "#%d#%d#%d\n",module_num, g, path_step);
 
                 while (struct_ptr->previous != NULL){
                     y = struct_ptr->y; 
@@ -296,17 +331,16 @@ void bfsv2(char ***maze, int height, int width, FILE* file, int module_num) {
                 for (int i = 0; i < height; i++){
                     for (int j = 0; j < width; j++){
                         if (*maze[i][j] == 'O'){
-                            *maze[i][j] == ' '; 
+                            *maze[i][j] = ' '; 
                         }
                     }
                 }
             }
         }
+    //bfs dla modułu bez p i k 
     } else {
         for(int g = 0; g<width-1; g++){
             if(*maze[height-1][g] == ' '){
-                
-                module_it ++; 
 
                 *maze[height-1][g] = 'O';
 
@@ -316,17 +350,14 @@ void bfsv2(char ***maze, int height, int width, FILE* file, int module_num) {
 
                 while(i != 0/*i != py && j != (px + 1)*/){
 
-                    printf("px, py - %d, %d\n", px, py);
-                    i = dequeue_a(queue);
-                    printf("dequeued i - %d\n", i);
-                    j = dequeue_b(queue);
-                    printf("dequeued j - %d\n", j);
-                    struct_ptr = dequeue_ptr(queue_2);
-                    printf("dequeued pointer - %p\n", struct_ptr); 
+                   
+                    i = dequeue_a(queue);                   
+                    j = dequeue_b(queue);                    
+                    struct_ptr = dequeue_ptr(queue_2);                     
                     check_surroundings_2(*maze, i, j, struct_ptr, queue, queue_2);        
                 }
 
-                fprintf(file, "#%d,%d#%d\n",module_num, module_it, x);
+                fprintf(file, "#%d#%d#%d\n",module_num, g, path_step);
 
                 while (struct_ptr->previous != NULL){
                     y = struct_ptr->y; 
@@ -341,7 +372,7 @@ void bfsv2(char ***maze, int height, int width, FILE* file, int module_num) {
                 for (int i = 0; i < height; i++){
                     for (int j = 0; j < width; j++){
                         if (*maze[i][j] == 'O'){
-                            *maze[i][j] == ' '; 
+                            *maze[i][j] = ' '; 
                         }
                     }
                 }
@@ -349,10 +380,9 @@ void bfsv2(char ***maze, int height, int width, FILE* file, int module_num) {
         }
     }
 
-    /*
     for (int i = 0; i < QUEUE_MAX_SIZE; i++) {
         free(queue_2[i]);
-    }*/
+    }
     
     free(queue_2);
 
